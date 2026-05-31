@@ -65,7 +65,7 @@ app.post('/admin/add-customer', async (req, res) => {
     const { lineUserId, realName, phone, birthday, serviceItem, durationHours, bookingTime, allergy } = req.body;
     await new Customer({ lineUserId, realName, phone, birthday, serviceItem, durationHours, bookingTime, allergy }).save();
     
-    // 同步 Google Calendar
+    // 預約資料同步到 Google Calendar (保留)
     await calendar.events.insert({ 
         calendarId: 'soarich8588@gmail.com', 
         requestBody: { 
@@ -76,30 +76,34 @@ app.post('/admin/add-customer', async (req, res) => {
         } 
     });
 
-    // 完美復刻版：帶圖卡 + 底部說明
+    // 重新校正：完美復刻黑金圖卡 (含圖片、所有欄位、注意事項)
     const premiumFlexCard = {
       type: "bubble",
       hero: { 
         type: "image", 
-        url: "https://i.imgur.com/your_image_id.jpg", // 請確保這裡填入你那張睫毛特寫圖的公開網址
+        url: "https://i.imgur.com/your_image_id.jpg", // 請確保填入你那張圖的正確連結
         size: "full", aspectRatio: "16:10", aspectMode: "cover" 
       },
-      body: { type: "box", layout: "vertical", paddingAll: "26px", backgroundColor: "#1c1c1c", contents: [
-        { type: "text", text: "SOARICH.STUDIO", weight: "bold", size: "xl", color: "#dfba73" },
-        { type: "text", text: "OFFICIAL APPOINTMENT", size: "xs", color: "#ffffff", weight: "bold" },
-        { type: "box", layout: "vertical", margin: "xl", spacing: "md", contents: [
-            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "顧客姓名", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: realName, size: "xs", color: "#ffffff", flex: 5 }]},
-            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "聯絡電話", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: phone, size: "xs", color: "#ffffff", flex: 5 }]},
-            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "預約時間", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: bookingTime.replace('T', ' '), size: "xs", color: "#dfba73", flex: 5 }]},
-            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "預約狀態", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: "$500 TWD (已全額確認 ✅)", size: "xs", color: "#81c784", weight: "bold", flex: 5 }]}
-        ]},
-        { type: "separator", margin: "xl", color: "#333333" },
-        { type: "text", text: "• 精品服務採完全預約制，時段已為您專屬保留。\n• 如需調整時間，請於 3 日前聯繫老師處理。", size: "xxs", color: "#888888", wrap: true, margin: "md" }
-      ]}
+      body: { 
+        type: "box", layout: "vertical", paddingAll: "26px", backgroundColor: "#1c1c1c", 
+        contents: [
+            { type: "text", text: "SOARICH.STUDIO", weight: "bold", size: "xl", color: "#dfba73" },
+            { type: "text", text: "OFFICIAL APPOINTMENT", size: "xs", color: "#ffffff", weight: "bold", margin: "xs" },
+            { type: "box", layout: "vertical", margin: "xl", spacing: "md", contents: [
+                { type: "box", layout: "horizontal", contents: [{ type: "text", text: "顧客姓名", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: realName, size: "xs", color: "#ffffff", flex: 5 }]},
+                { type: "box", layout: "horizontal", contents: [{ type: "text", text: "預約項目", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: `${serviceItem}`, size: "xs", color: "#ffffff", flex: 5 }]},
+                { type: "box", layout: "horizontal", contents: [{ type: "text", text: "施作時長", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: `${durationHours} 小時`, size: "xs", color: "#dfba73", flex: 5 }]},
+                { type: "box", layout: "horizontal", contents: [{ type: "text", text: "預約時間", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: bookingTime.replace('T', ' '), size: "xs", color: "#ffffff", flex: 5 }]},
+                { type: "box", layout: "horizontal", contents: [{ type: "text", text: "預約狀態", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: "$500 TWD (已全額確認 ✅)", size: "xs", color: "#81c784", weight: "bold", flex: 5 }]}
+            ]},
+            { type: "separator", margin: "xl", color: "#333333" },
+            { type: "text", text: "• 精品服務採完全預約制，時段已為您專屬保留。\n• 如需調整時間，請於 3 日前聯繫老師處理。", size: "xxs", color: "#888888", wrap: true, margin: "md" }
+        ]
+      }
     };
     
     await client.pushMessage({ to: lineUserId, messages: [{ type: "flex", altText: "✨ 預約成功通知", contents: premiumFlexCard }] });
-    res.send(`<script>alert("系統同步成功！");window.location.href="/admin";</script>`);
+    res.send(`<script>alert("系統同步與圖卡發送成功！");window.location.href="/admin";</script>`);
   } catch (err) { res.status(500).send("預約失敗"); }
 });
 
