@@ -18,7 +18,6 @@ const client = new line.messagingApi.MessagingApiClient({ channelAccessToken: pr
 const auth = new google.auth.GoogleAuth({ credentials: JSON.parse(process.env.GOOGLE_KEY_JSON), scopes: ['https://www.googleapis.com/auth/calendar'] });
 const calendar = google.calendar({ version: 'v3', auth });
 
-// 後台管理介面 - 已經完全還原你的黑金大理石紋風格與配置
 app.get('/admin', async (req, res) => {
   try {
     const top6Users = await LineUser.find().sort({ updatedAt: -1 }).limit(6);
@@ -33,17 +32,15 @@ app.get('/admin', async (req, res) => {
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Sans+TC:wght@300;400;500&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; background-image: url('https://images.unsplash.com/photo-1618220179428-22790b461013?q=80&w=1500&auto=format&fit=crop'); background-size: cover; background-attachment: fixed; background-position: center; padding: 60px 20px; color: #2c2c2c; }
-        .container { max-width: 540px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); padding: 50px; border-radius: 24px; box-shadow: 0 30px 60px rgba(0,0,0,0.1); margin: 0 auto; border: 2px solid #dfba73; }
-        h1 { font-family: 'Cinzel', serif; font-weight: 600; font-size: 34px; text-align: center; background: linear-gradient(135deg, #bf953f 0%, #b38728 50%, #aa771c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        label { font-weight: 500; display: block; margin-top: 24px; color: #44321a; font-size: 14px; }
+        .container { max-width: 540px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); padding: 50px; border-radius: 24px; border: 2px solid #dfba73; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        h1 { font-family: 'Cinzel', serif; color: #aa771c; text-align: center; }
         input, select, textarea { width: 100%; padding: 14px; margin-top: 8px; border: 1px solid #dcd1bd; border-radius: 12px; background: rgba(255,255,255,0.7); }
-        .deposit-box { background: linear-gradient(135deg, #f9f6f0 0%, #f3ede0 100%); color: #8a6d3b; padding: 14px; border-radius: 12px; margin-top: 30px; border: 1px solid #dfba73; text-align: center; font-weight: 500; }
+        .deposit-box { background: #f3ede0; color: #8a6d3b; padding: 14px; border-radius: 12px; border: 1px solid #dfba73; text-align: center; margin-top: 20px; }
         button { width: 100%; padding: 18px; background: linear-gradient(135deg, #bf953f 0%, #b38728 50%, #aa771c 100%); border: none; color: #fff; font-weight: 600; border-radius: 12px; margin-top: 30px; cursor: pointer; letter-spacing: 3px; }
-        .choices__inner { background: rgba(255,255,255,0.7) !important; border: 1px solid #dcd1bd !important; border-radius: 12px !important; }
     </style></head><body>
     <div class="container"><h1>SOARICH.STUDIO</h1>
     <form action="/admin/add-customer" method="POST">
-        <label>連動顧客</label><select name="lineUserId" id="s" required><option value="">請搜尋舊客...</option>${optionsHtml}</select>
+        <label>連動顧客</label><select name="lineUserId" id="s" required><option value="">搜尋舊客...</option>${optionsHtml}</select>
         <label>真實姓名</label><input type="text" name="realName" required>
         <label>電話</label><input type="tel" name="phone" required>
         <label>生日</label><input type="date" name="birthday" required>
@@ -56,67 +53,39 @@ app.get('/admin', async (req, res) => {
         <div class="deposit-box">✨ 已確認入帳預約訂金 $500 TWD</div>
         <button type="submit">發送精品預約確認卡</button>
     </form></div><script>new Choices('#s');</script></body></html>`);
-  } catch (err) { res.status(500).send("後台錯誤"); }
+  } catch (e) { res.status(500).send("錯誤"); }
 });
 
-// 5. 提交預約 (包含黑金 Flex 圖卡 + 圖片 + 底部注意事項)
 app.post('/admin/add-customer', async (req, res) => {
   try {
     const { lineUserId, realName, phone, birthday, serviceItem, durationHours, bookingTime, allergy } = req.body;
     await new Customer({ lineUserId, realName, phone, birthday, serviceItem, durationHours, bookingTime, allergy }).save();
     
-    // 預約資料同步到 Google Calendar (保留)
-    await calendar.events.insert({ 
-        calendarId: 'soarich8588@gmail.com', 
-        requestBody: { 
-            summary: `🌸 SOARICH | ${realName} - ${serviceItem}`, 
-            description: `📞 電話: ${phone}\n⏳ 時長: ${durationHours}小時\n📝 備註: ${allergy || '無'}`,
-            start: { dateTime: new Date(bookingTime).toISOString() }, 
-            end: { dateTime: new Date(new Date(bookingTime).getTime() + Number(durationHours)*3600000).toISOString() } 
-        } 
-    });
+    await calendar.events.insert({ calendarId: 'soarich8588@gmail.com', requestBody: { 
+        summary: `🌸 SOARICH | ${realName} - ${serviceItem}`, 
+        description: `電話: ${phone}\n時長: ${durationHours}h\n備註: ${allergy}`,
+        start: { dateTime: new Date(bookingTime).toISOString() }, 
+        end: { dateTime: new Date(new Date(bookingTime).getTime() + Number(durationHours)*3600000).toISOString() } 
+    } });
 
-    // 重新校正：完美復刻黑金圖卡 (含圖片、所有欄位、注意事項)
+    // 完美圖卡 - 記得將這裡的網址換成你那張圖片正確的直連網址
     const premiumFlexCard = {
       type: "bubble",
-      hero: { 
-        type: "image", 
-        url: "https://i.imgur.com/your_image_id.jpg", // 請確保填入你那張圖的正確連結
-        size: "full", aspectRatio: "16:10", aspectMode: "cover" 
-      },
-      body: { 
-        type: "box", layout: "vertical", paddingAll: "26px", backgroundColor: "#1c1c1c", 
-        contents: [
-            { type: "text", text: "SOARICH.STUDIO", weight: "bold", size: "xl", color: "#dfba73" },
-            { type: "text", text: "OFFICIAL APPOINTMENT", size: "xs", color: "#ffffff", weight: "bold", margin: "xs" },
-            { type: "box", layout: "vertical", margin: "xl", spacing: "md", contents: [
-                { type: "box", layout: "horizontal", contents: [{ type: "text", text: "顧客姓名", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: realName, size: "xs", color: "#ffffff", flex: 5 }]},
-                { type: "box", layout: "horizontal", contents: [{ type: "text", text: "預約項目", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: `${serviceItem}`, size: "xs", color: "#ffffff", flex: 5 }]},
-                { type: "box", layout: "horizontal", contents: [{ type: "text", text: "施作時長", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: `${durationHours} 小時`, size: "xs", color: "#dfba73", flex: 5 }]},
-                { type: "box", layout: "horizontal", contents: [{ type: "text", text: "預約時間", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: bookingTime.replace('T', ' '), size: "xs", color: "#ffffff", flex: 5 }]},
-                { type: "box", layout: "horizontal", contents: [{ type: "text", text: "預約狀態", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: "$500 TWD (已全額確認 ✅)", size: "xs", color: "#81c784", weight: "bold", flex: 5 }]}
-            ]},
-            { type: "separator", margin: "xl", color: "#333333" },
-            { type: "text", text: "• 精品服務採完全預約制，時段已為您專屬保留。\n• 如需調整時間，請於 3 日前聯繫老師處理。", size: "xxs", color: "#888888", wrap: true, margin: "md" }
-        ]
-      }
+      hero: { type: "image", url: "https://lh3.googleusercontent.com/d/1vGMVf5IxnnDola5IHdAEnKcP6qnLBNto", size: "full", aspectRatio: "16:10", aspectMode: "cover" },
+      body: { type: "box", layout: "vertical", paddingAll: "26px", backgroundColor: "#1c1c1c", contents: [
+        { type: "text", text: "SOARICH.STUDIO", weight: "bold", size: "xl", color: "#dfba73" },
+        { type: "text", text: "OFFICIAL APPOINTMENT", size: "xs", color: "#ffffff", weight: "bold" },
+        { type: "box", layout: "vertical", margin: "xl", spacing: "md", contents: [
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "顧客", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: realName, size: "xs", color: "#ffffff", flex: 5 }]},
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "項目", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: `${serviceItem} (${durationHours}h)`, size: "xs", color: "#dfba73", weight: "bold", flex: 5 }]}
+        ]},
+        { type: "separator", margin: "xl", color: "#333333" },
+        { type: "text", text: "• 精品服務採完全預約制，時段已為您專屬保留。\n• 如需調整時間，請於 3 日前聯繫老師處理。", size: "xxs", color: "#888888", wrap: true, margin: "md" }
+      ]}
     };
-    
-    await client.pushMessage({ to: lineUserId, messages: [{ type: "flex", altText: "✨ 預約成功通知", contents: premiumFlexCard }] });
-    res.send(`<script>alert("系統同步與圖卡發送成功！");window.location.href="/admin";</script>`);
-  } catch (err) { res.status(500).send("預約失敗"); }
-});
-
-app.post('/webhook', (req, res) => {
-  res.status(200).send('OK');
-  if (req.body.events) req.body.events.forEach(async e => {
-      if (e.source.userId) {
-          try {
-              const p = await client.getProfile(e.source.userId);
-              await LineUser.findOneAndUpdate({ lineUserId: e.source.userId }, { lineName: p.displayName, updatedAt: new Date() }, { upsert: true });
-          } catch (ex) { await LineUser.findOneAndUpdate({ lineUserId: e.source.userId }, { lineName: 'LINE 貴賓', updatedAt: new Date() }, { upsert: true }); }
-      }
-  });
+    await client.pushMessage({ to: lineUserId, messages: [{ type: "flex", altText: "✨ 預約成功", contents: premiumFlexCard }] });
+    res.send(`<script>alert("發送成功！");window.location.href="/admin";</script>`);
+  } catch (e) { res.status(500).send("失敗"); }
 });
 
 app.listen(process.env.PORT || 3000, '0.0.0.0', () => console.log('🚀 系統服役中'));
