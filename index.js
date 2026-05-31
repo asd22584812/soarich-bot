@@ -95,13 +95,15 @@ app.post('/admin/add-customer', async (req, res) => {
         { type: "text", text: "SOARICH.STUDIO", weight: "bold", size: "xl", color: "#dfba73" },
         { type: "text", text: "OFFICIAL APPOINTMENT", size: "xs", color: "#ffffff", weight: "bold" },
         { type: "box", layout: "vertical", margin: "xl", spacing: "md", contents: [
-            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "顧客", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: realName, size: "xs", color: "#ffffff", flex: 5 }]},
-            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "項目", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: `${serviceItem} (${durationHours}h)`, size: "xs", color: "#dfba73", weight: "bold", flex: 5 }]},
-            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "時間", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: bookingTime.replace('T', ' '), size: "xs", color: "#ffffff", flex: 5 }]},
-            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "狀態", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: "$500 TWD (已確認 ✅)", size: "xs", color: "#81c784", weight: "bold", flex: 5 }]}
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "顧客姓名", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: realName, size: "xs", color: "#ffffff", flex: 5 }]},
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "預約項目", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: `${serviceItem} (${durationHours}h)`, size: "xs", color: "#dfba73", weight: "bold", flex: 5 }]},
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "預約時間", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: bookingTime.replace('T', ' '), size: "xs", color: "#ffffff", flex: 5 }]},
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "預約狀態", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: "$500 TWD (已確認 ✅)", size: "xs", color: "#81c784", weight: "bold", flex: 5 }]}
         ]},
         { type: "separator", margin: "xl", color: "#333333" },
         { type: "text", text: "• 精品服務採完全預約制，時段已為您專屬保留。", size: "xxs", color: "#888888", wrap: true, margin: "md" }
+      ]}
+        { type: "text", text: "• 如需調整時間，請於3日前聯繫老師處理。", size: "xxs", color: "#888888", wrap: true, margin: "md" }
       ]}
     };
     await client.pushMessage({ to: lineUserId, messages: [{ type: "flex", altText: "✨ 預約確認", contents: premiumFlexCard }] });
