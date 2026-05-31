@@ -7,6 +7,7 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// 資料庫與服務初始化
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('✅ 資料庫連線成功'))
   .catch(err => console.error('❌ 資料庫連線失敗', err));
@@ -18,6 +19,7 @@ const client = new line.messagingApi.MessagingApiClient({ channelAccessToken: pr
 const auth = new google.auth.GoogleAuth({ credentials: JSON.parse(process.env.GOOGLE_KEY_JSON), scopes: ['https://www.googleapis.com/auth/calendar'] });
 const calendar = google.calendar({ version: 'v3', auth });
 
+// 後台網頁路由
 app.get('/admin', async (req, res) => {
   try {
     const top6Users = await LineUser.find().sort({ updatedAt: -1 }).limit(6);
@@ -31,12 +33,12 @@ app.get('/admin', async (req, res) => {
     <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Sans+TC:wght@300;400;500&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; background-image: url('https://images.unsplash.com/photo-1618220179428-22790b461013?q=80&w=1500&auto=format&fit=crop'); background-size: cover; background-attachment: fixed; background-position: center; padding: 60px 20px; color: #2c2c2c; }
-        .container { max-width: 540px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); padding: 50px; border-radius: 24px; border: 2px solid #dfba73; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        body { font-family: 'Noto Sans TC', sans-serif; background-image: url('https://images.unsplash.com/photo-1618220179428-22790b461013?q=80&w=1500&auto=format&fit=crop'); padding: 60px 20px; color: #2c2c2c; }
+        .container { max-width: 540px; background: rgba(255, 255, 255, 0.9); padding: 50px; border-radius: 24px; border: 2px solid #dfba73; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
         h1 { font-family: 'Cinzel', serif; color: #aa771c; text-align: center; }
-        input, select, textarea { width: 100%; padding: 14px; margin-top: 8px; border: 1px solid #dcd1bd; border-radius: 12px; background: rgba(255,255,255,0.7); }
+        input, select, textarea { width: 100%; padding: 14px; margin-top: 8px; border: 1px solid #dcd1bd; border-radius: 12px; }
         .deposit-box { background: #f3ede0; color: #8a6d3b; padding: 14px; border-radius: 12px; border: 1px solid #dfba73; text-align: center; margin-top: 20px; }
-        button { width: 100%; padding: 18px; background: linear-gradient(135deg, #bf953f 0%, #b38728 50%, #aa771c 100%); border: none; color: #fff; font-weight: 600; border-radius: 12px; margin-top: 30px; cursor: pointer; letter-spacing: 3px; }
+        button { width: 100%; padding: 18px; background: linear-gradient(135deg, #bf953f 0%, #b38728 50%, #aa771c 100%); border: none; color: #fff; font-weight: 600; border-radius: 12px; margin-top: 30px; cursor: pointer; }
     </style></head><body>
     <div class="container"><h1>SOARICH.STUDIO</h1>
     <form action="/admin/add-customer" method="POST">
@@ -56,6 +58,7 @@ app.get('/admin', async (req, res) => {
   } catch (e) { res.status(500).send("錯誤"); }
 });
 
+// 預約提交 API
 app.post('/admin/add-customer', async (req, res) => {
   try {
     const { lineUserId, realName, phone, birthday, serviceItem, durationHours, bookingTime, allergy } = req.body;
@@ -63,12 +66,12 @@ app.post('/admin/add-customer', async (req, res) => {
     
     await calendar.events.insert({ calendarId: 'soarich8588@gmail.com', requestBody: { 
         summary: `🌸 SOARICH | ${realName} - ${serviceItem}`, 
-        description: `電話: ${phone}\n時長: ${durationHours}h\n備註: ${allergy}`,
+        description: `電話: ${phone}\n時長: ${durationHours}小時\n備註: ${allergy}`,
         start: { dateTime: new Date(bookingTime).toISOString() }, 
         end: { dateTime: new Date(new Date(bookingTime).getTime() + Number(durationHours)*3600000).toISOString() } 
     } });
 
-    // 完美圖卡 - 記得將這裡的網址換成你那張圖片正確的直連網址
+    // 完美圖卡
     const premiumFlexCard = {
       type: "bubble",
       hero: { type: "image", url: "https://lh3.googleusercontent.com/d/1vGMVf5IxnnDola5IHdAEnKcP6qnLBNto", size: "full", aspectRatio: "16:10", aspectMode: "cover" },
@@ -77,14 +80,16 @@ app.post('/admin/add-customer', async (req, res) => {
         { type: "text", text: "OFFICIAL APPOINTMENT", size: "xs", color: "#ffffff", weight: "bold" },
         { type: "box", layout: "vertical", margin: "xl", spacing: "md", contents: [
             { type: "box", layout: "horizontal", contents: [{ type: "text", text: "顧客", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: realName, size: "xs", color: "#ffffff", flex: 5 }]},
-            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "項目", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: `${serviceItem} (${durationHours}h)`, size: "xs", color: "#dfba73", weight: "bold", flex: 5 }]}
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "項目", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: `${serviceItem} (${durationHours}h)`, size: "xs", color: "#dfba73", weight: "bold", flex: 5 }]},
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "時間", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: bookingTime.replace('T', ' '), size: "xs", color: "#ffffff", flex: 5 }]},
+            { type: "box", layout: "horizontal", contents: [{ type: "text", text: "狀態", size: "xs", color: "#888888", flex: 2 }, { type: "text", text: "$500 TWD (已確認 ✅)", size: "xs", color: "#81c784", weight: "bold", flex: 5 }]}
         ]},
         { type: "separator", margin: "xl", color: "#333333" },
         { type: "text", text: "• 精品服務採完全預約制，時段已為您專屬保留。\n• 如需調整時間，請於 3 日前聯繫老師處理。", size: "xxs", color: "#888888", wrap: true, margin: "md" }
       ]}
     };
-    await client.pushMessage({ to: lineUserId, messages: [{ type: "flex", altText: "✨ 預約成功", contents: premiumFlexCard }] });
-    res.send(`<script>alert("發送成功！");window.location.href="/admin";</script>`);
+    await client.pushMessage({ to: lineUserId, messages: [{ type: "flex", altText: "✨ 預約確認", contents: premiumFlexCard }] });
+    res.send(`<script>alert("系統同步與圖卡發送成功！");window.location.href="/admin";</script>`);
   } catch (e) { res.status(500).send("失敗"); }
 });
 
