@@ -80,20 +80,31 @@ app.post('/admin/add-customer', async (req, res) => {
     const { lineUserId, realName, phone, birthday, serviceItem, durationHours, bookingTime, allergy } = req.body;
     await new Customer({ lineUserId, realName, phone, birthday, serviceItem, durationHours, bookingTime, allergy }).save();
     
-    // 處理時區與詳細資訊
-    const startTime = new Date(bookingTime);
-    startTime.setHours(startTime.getHours() + 8); // 加上 8 小時轉為台灣時間
-    const endTime = new Date(startTime.getTime() + Number(durationHours) * 3600000);
+        // 預約提交 API 中的 calendar.events.insert 修正版
+    const startDateTime = new Date(bookingTime);
+    const endDateTime = new Date(startDateTime.getTime() + Number(durationHours) * 3600000);
+
+    // 格式化為 YYYYMMDDTHHMMSS 格式，這是最穩定不會跑掉的寫法
+    const formatDate = (date) => {
+        return date.toISOString().split('.')[0].replace(/[-:]/g, '');
+    };
 
     await calendar.events.insert({ 
         calendarId: 'soarich8588@gmail.com', 
         requestBody: { 
             summary: `🌸 SOARICH | ${realName} - ${serviceItem}`, 
-            description: `【顧客姓名】: ${realName}\n【電話】: ${phone}\n【生日】: ${birthday}\n【施作項目】: ${serviceItem}\n【預約時長】: ${durationHours}小時\n【顧客備註】: ${allergy || '無'}`,
-            start: { dateTime: startTime.toISOString().split('.')[0] + 'Z' }, 
-            end: { dateTime: endTime.toISOString().split('.')[0] + 'Z' } 
+            description: `顧客姓名: ${realName}\n電話: ${phone}\n生日: ${birthday}\n項目: ${serviceItem}\n時長: ${durationHours}小時\n備註: ${allergy}`,
+            start: { 
+                dateTime: bookingTime + ':00', // 直接採用輸入的時間格式，不經過轉換
+                timeZone: 'Asia/Taipei'
+            }, 
+            end: { 
+                dateTime: endDateTime.toISOString().split('.')[0], // 結束時間同樣依據開始時間計算
+                timeZone: 'Asia/Taipei'
+            } 
         } 
     });
+
 
     // 完美圖卡 (保持原樣，不動 UI)
     const premiumFlexCard = {
