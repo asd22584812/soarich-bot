@@ -74,20 +74,28 @@ app.get('/admin', async (req, res) => {
   } catch (e) { res.status(500).send("錯誤"); }
 });
 
-// 預約提交 API
+// 預約提交 API (修正行事曆時間與完整資料同步)
 app.post('/admin/add-customer', async (req, res) => {
   try {
     const { lineUserId, realName, phone, birthday, serviceItem, durationHours, bookingTime, allergy } = req.body;
     await new Customer({ lineUserId, realName, phone, birthday, serviceItem, durationHours, bookingTime, allergy }).save();
     
-    await calendar.events.insert({ calendarId: 'soarich8588@gmail.com', requestBody: { 
-        summary: `🌸 SOARICH | ${realName} - ${serviceItem}`, 
-        description: `電話: ${phone}\n時長: ${durationHours}h\n備註: ${allergy}`,
-        start: { dateTime: new Date(bookingTime).toISOString() }, 
-        end: { dateTime: new Date(new Date(bookingTime).getTime() + Number(durationHours)*3600000).toISOString() } 
-    } });
+    // 處理時區與詳細資訊
+    const startTime = new Date(bookingTime);
+    startTime.setHours(startTime.getHours() + 8); // 加上 8 小時轉為台灣時間
+    const endTime = new Date(startTime.getTime() + Number(durationHours) * 3600000);
 
-    // 完美圖卡 (請務必將下方的 URL 換成你那張圖片的直連網址)
+    await calendar.events.insert({ 
+        calendarId: 'soarich8588@gmail.com', 
+        requestBody: { 
+            summary: `🌸 SOARICH | ${realName} - ${serviceItem}`, 
+            description: `【顧客姓名】: ${realName}\n【電話】: ${phone}\n【生日】: ${birthday}\n【施作項目】: ${serviceItem}\n【預約時長】: ${durationHours}小時\n【顧客備註】: ${allergy || '無'}`,
+            start: { dateTime: startTime.toISOString().split('.')[0] + 'Z' }, 
+            end: { dateTime: endTime.toISOString().split('.')[0] + 'Z' } 
+        } 
+    });
+
+    // 完美圖卡 (保持原樣，不動 UI)
     const premiumFlexCard = {
       type: "bubble",
       hero: { type: "image", url: "https://lh3.googleusercontent.com/d/1vGMVf5IxnnDola5IHdAEnKcP6qnLBNto", size: "full", aspectRatio: "16:10", aspectMode: "cover" },
@@ -108,6 +116,7 @@ app.post('/admin/add-customer', async (req, res) => {
     res.send(`<script>alert("系統同步與圖卡發送成功！");window.location.href="/admin";</script>`);
   } catch (e) { res.status(500).send("失敗"); }
 });
+
 
 app.post('/webhook', (req, res) => {
   res.status(200).send('OK');
